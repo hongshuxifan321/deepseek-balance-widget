@@ -87,8 +87,8 @@ class WhaleSpinner:
         self.on_click = on_click
         self.angle = 0.0
         self.velocity = 0.0
-        self.friction = 0.965
-        self.min_v = 0.0006
+        self.friction = 0.982
+        self.min_v = 0.0003
         self.auto_spin = False
         self._running = False
         self._click_count = 0
@@ -134,7 +134,7 @@ class WhaleSpinner:
         self._draw()
 
         if abs(self.velocity) > self.min_v or self.auto_spin:
-            self.canvas.after(1, self._loop)
+            self.canvas.after(8, self._loop)
         else:
             self.velocity = 0.0
             self._running = False
