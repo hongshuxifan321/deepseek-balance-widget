@@ -1,0 +1,13 @@
+# 配置文件（含 API key，千万不能提交！）
+.deepseek_balance_widget.json
+
+# 打包产物
+dist/
+build/
+*.spec
+__pycache__/
+*.pyc
+
+# 系统文件
+.DS_Store
+Thumbs.db
