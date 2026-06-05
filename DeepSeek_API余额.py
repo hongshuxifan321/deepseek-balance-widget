@@ -134,7 +134,7 @@ class WhaleSpinner:
         self._draw()
 
         if abs(self.velocity) > self.min_v or self.auto_spin:
-            self.canvas.after(16, self._loop)
+            self.canvas.after(1, self._loop)
         else:
             self.velocity = 0.0
             self._running = False
