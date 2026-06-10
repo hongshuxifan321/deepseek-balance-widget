@@ -27,24 +27,24 @@ jobs:
         shell: bash
         run: |
           pyinstaller --onefile --windowed --name "DeepSeek_API余额" --add-data ".deepseek_whale.png;." DeepSeek_API余额.py
-          cp "dist/DeepSeek_API余额.exe" "dist/DeepSeek-Balance-Windows.exe"
+          cp "dist/DeepSeek_API余额.exe" "dist/DeepSeek_API余额-Windows.exe"
 
       - name: Build (macOS)
         if: runner.os == 'macOS'
         shell: bash
         run: |
           pyinstaller --onefile --name "DeepSeek_API余额" --add-data ".deepseek_whale.png:." DeepSeek_API余额.py
-          cp "dist/DeepSeek_API余额" "dist/DeepSeek-Balance-macOS"
+          cp "dist/DeepSeek_API余额" "dist/DeepSeek_API余额-macOS"
 
       - name: Build (Linux)
         if: runner.os == 'Linux'
         shell: bash
         run: |
           pyinstaller --onefile --windowed --name "DeepSeek_API余额" --add-data ".deepseek_whale.png:." DeepSeek_API余额.py
-          cp "dist/DeepSeek_API余额" "dist/DeepSeek-Balance-Linux"
+          cp "dist/DeepSeek_API余额" "dist/DeepSeek_API余额-Linux"
 
       - name: Upload to Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            dist/DeepSeek-Balance-*
+            dist/DeepSeek_API余额-*
