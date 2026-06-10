@@ -4,6 +4,9 @@ on:
   push:
     tags: ["v*"]
 
+permissions:
+  contents: write
+
 jobs:
   build:
     strategy:
@@ -30,7 +33,7 @@ jobs:
       - name: Build (macOS)
         if: runner.os == 'macOS'
         run: >
-          pyinstaller --onefile --windowed
+          pyinstaller --onefile
           --name "DeepSeek_API余额"
           --add-data ".deepseek_whale.png:."
           DeepSeek_API余额.py
