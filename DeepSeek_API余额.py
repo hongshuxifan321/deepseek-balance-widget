@@ -13,6 +13,7 @@ DeepSeek API 余额悬浮窗
 import json
 import math
 import os
+import subprocess
 import sys
 import threading
 import time
@@ -256,13 +257,25 @@ class BalanceWidget:
         self._schedule_refresh()
 
     # ─── API 开放平台 ───────────────────────────────
-    def _open_platform(self):
-        # webbrowser.open 会阻塞 tkinter 主循环导致卡死，改用 os.startfile
-        url = "https://platform.deepseek.com/usage"
+    @staticmethod
+    def _open_url(url):
+        """跨平台非阻塞打开浏览器"""
         try:
-            os.startfile(url)
+            if sys.platform == "win32":
+                os.startfile(url)
+            elif sys.platform == "darwin":
+                subprocess.Popen(["open", url])
+            else:
+                subprocess.Popen(["xdg-open", url])
         except Exception:
             webbrowser.open(url)
+
+    def _open_platform(self):
+        threading.Thread(
+            target=self._open_url,
+            args=("https://platform.deepseek.com/usage",),
+            daemon=True,
+        ).start()
 
     def _recenter_text(self):
         """根据实际字体尺寸垂直居中两行文字"""
