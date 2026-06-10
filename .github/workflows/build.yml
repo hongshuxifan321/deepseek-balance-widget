@@ -1,0 +1,32 @@
+name: Build
+
+on:
+  push:
+    tags: ["v*"]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+        include:
+          - os: windows-latest
+            ext: .exe
+          - os: macos-latest
+            ext: .app
+          - os: ubuntu-latest
+            ext: ""
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt pyinstaller
+      - run: >
+          pyinstaller --onefile --windowed
+          --name "DeepSeek_API余额" --add-data ".deepseek_whale.png:."
+          DeepSeek_API余额.py
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/DeepSeek_API余额*
