@@ -9,24 +9,41 @@ jobs:
     strategy:
       matrix:
         os: [windows-latest, macos-latest, ubuntu-latest]
-        include:
-          - os: windows-latest
-            ext: .exe
-          - os: macos-latest
-            ext: .app
-          - os: ubuntu-latest
-            ext: ""
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install -r requirements.txt pyinstaller
-      - run: >
+
+      - name: Install deps
+        run: pip install -r requirements.txt pyinstaller
+
+      - name: Build (Windows)
+        if: runner.os == 'Windows'
+        run: >
           pyinstaller --onefile --windowed
-          --name "DeepSeek_API余额" --add-data ".deepseek_whale.png:."
+          --name "DeepSeek_API余额"
+          --add-data ".deepseek_whale.png;."
           DeepSeek_API余额.py
-      - uses: softprops/action-gh-release@v2
+
+      - name: Build (macOS)
+        if: runner.os == 'macOS'
+        run: >
+          pyinstaller --onefile --windowed
+          --name "DeepSeek_API余额"
+          --add-data ".deepseek_whale.png:."
+          DeepSeek_API余额.py
+
+      - name: Build (Linux)
+        if: runner.os == 'Linux'
+        run: >
+          pyinstaller --onefile --windowed
+          --name "DeepSeek_API余额"
+          --add-data ".deepseek_whale.png:."
+          DeepSeek_API余额.py
+
+      - name: Upload to Release
+        uses: softprops/action-gh-release@v2
         with:
           files: dist/DeepSeek_API余额*
