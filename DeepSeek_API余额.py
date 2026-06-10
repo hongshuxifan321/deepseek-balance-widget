@@ -257,7 +257,12 @@ class BalanceWidget:
 
     # ─── API 开放平台 ───────────────────────────────
     def _open_platform(self):
-        webbrowser.open("https://platform.deepseek.com/usage")
+        # webbrowser.open 会阻塞 tkinter 主循环导致卡死，改用 os.startfile
+        url = "https://platform.deepseek.com/usage"
+        try:
+            os.startfile(url)
+        except Exception:
+            webbrowser.open(url)
 
     def _recenter_text(self):
         """根据实际字体尺寸垂直居中两行文字"""
