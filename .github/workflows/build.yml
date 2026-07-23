@@ -26,7 +26,7 @@ jobs:
         if: runner.os == 'Windows'
         shell: bash
         run: |
-          pyinstaller --onefile --windowed --name "DeepSeek_API余额" --add-data ".deepseek_whale.png;." DeepSeek_API余额.py
+          pyinstaller --onefile --windowed --name "DeepSeek_API余额" --add-data ".deepseek_whale.png;." --collect-all certifi DeepSeek_API余额.py
           cp "dist/DeepSeek_API余额.exe" "dist/DeepSeek_API余额-Windows.exe"
 
       - name: Build (macOS)

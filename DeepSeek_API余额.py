@@ -354,8 +354,12 @@ class BalanceWidget:
             self.text_canvas.itemconfig(self._text_name, text="DeepSeek", fill=DS_BLUE)
         else:
             self.text_canvas.itemconfig(self._text_bal, text="---", fill=FG_MUTED)
+            err_text = self.fetch_error or "DeepSeek"
+            # 截断过长错误信息（如 SSL 证书路径），避免撑破界面
+            if len(err_text) > 16:
+                err_text = err_text[:14] + "…"
             self.text_canvas.itemconfig(self._text_name,
-                text=self.fetch_error if self.fetch_error else "DeepSeek",
+                text=err_text,
                 fill=FG_MUTED if self.fetch_error else DS_BLUE)
         self._recenter_text()
 
