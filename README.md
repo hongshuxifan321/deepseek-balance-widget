@@ -38,5 +38,5 @@ pythonw DeepSeek_API余额.py
 
 ```bash
 pip install pyinstaller
-pyinstaller --onefile --windowed --name "DeepSeek_API余额" --add-data ".deepseek_whale.png;." DeepSeek_API余额.py
+pyinstaller --onefile --windowed --name "DeepSeek_API余额" --add-data ".deepseek_whale.png;." --collect-all certifi DeepSeek_API余额.py
 ```
