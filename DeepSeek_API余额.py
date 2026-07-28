@@ -253,8 +253,8 @@ class BalanceWidget:
             w.bind("<Button-1>", self._drag_start)
             w.bind("<B1-Motion>", self._drag_move)
 
-        self.refresh()
-        self._schedule_refresh()
+        # 延迟首次请求，等系统网络栈初始化完毕
+        self.root.after(1500, self._start_refresh_cycle)
 
     # ─── API 开放平台 ───────────────────────────────
     @staticmethod
@@ -364,6 +364,11 @@ class BalanceWidget:
         self._recenter_text()
 
         self.spin._ensure_loop()
+
+    def _start_refresh_cycle(self):
+        """启动刷新循环（延迟后首次刷新 + 启动定时器）"""
+        self.refresh()
+        self._schedule_refresh()
 
     def _schedule_refresh(self):
         interval = self.cfg["refresh_interval"] * 1000
