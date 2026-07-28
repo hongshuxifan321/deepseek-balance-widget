@@ -26,25 +26,25 @@ jobs:
         if: runner.os == 'Windows'
         shell: bash
         run: |
-          pyinstaller --onefile --windowed --name "DeepSeek_API余额" --add-data ".deepseek_whale.png;." --collect-all certifi DeepSeek_API余额.py
-          cp "dist/DeepSeek_API余额.exe" "dist/DeepSeek_API余额-Windows.exe"
+          pyinstaller --onefile --windowed --name "DeepSeek_API_Balance" --add-data ".deepseek_whale.png;." --collect-all certifi DeepSeek_API余额.py
+          cp "dist/DeepSeek_API_Balance.exe" "dist/DeepSeek_API_Balance-Windows.exe"
 
       - name: Build (macOS)
         if: runner.os == 'macOS'
         shell: bash
         run: |
-          pyinstaller --onefile --name "DeepSeek_API余额" --add-data ".deepseek_whale.png:." DeepSeek_API余额.py
-          cp "dist/DeepSeek_API余额" "dist/DeepSeek_API余额-macOS"
+          pyinstaller --onefile --name "DeepSeek_API_Balance" --add-data ".deepseek_whale.png:." DeepSeek_API余额.py
+          cp "dist/DeepSeek_API_Balance" "dist/DeepSeek_API_Balance-macOS"
 
       - name: Build (Linux)
         if: runner.os == 'Linux'
         shell: bash
         run: |
-          pyinstaller --onefile --windowed --name "DeepSeek_API余额" --add-data ".deepseek_whale.png:." DeepSeek_API余额.py
-          cp "dist/DeepSeek_API余额" "dist/DeepSeek_API余额-Linux"
+          pyinstaller --onefile --windowed --name "DeepSeek_API_Balance" --add-data ".deepseek_whale.png:." DeepSeek_API余额.py
+          cp "dist/DeepSeek_API_Balance" "dist/DeepSeek_API_Balance-Linux"
 
       - name: Upload to Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            dist/DeepSeek_API余额-*
+            dist/DeepSeek_API_Balance-*
