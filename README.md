@@ -21,9 +21,11 @@
 
 ## 下载
 
-直接下载 exe，免安装、免 Python：
+直接下载，免安装、免 Python：
 
-👉 **[下载最新版 exe](../../releases/latest)**
+👉 **[下载最新版](../../releases/latest)**
+
+支持 Windows / macOS / Linux 三平台。
 
 ## 从源码运行
 
@@ -38,5 +40,7 @@ pythonw DeepSeek_API余额.py
 
 ```bash
 pip install pyinstaller
-pyinstaller --onefile --windowed --name "DeepSeek_API余额" --add-data ".deepseek_whale.png;." --collect-all certifi DeepSeek_API余额.py
+pyinstaller --onefile --windowed --name "DeepSeek_API_Balance" --add-data ".deepseek_whale.png;." --collect-all certifi DeepSeek_API余额.py
 ```
+
+> macOS/Linux 用户将 `;` 改为 `:`。
