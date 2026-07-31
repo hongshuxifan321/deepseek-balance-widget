@@ -14,3 +14,6 @@ __pycache__/
 # 系统文件
 .DS_Store
 Thumbs.db
+
+# 本地网络排障记录（含校园网环境细节，仅本地查阅，不进仓库）
+NETWORK_FIX.md

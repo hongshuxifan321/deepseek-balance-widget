@@ -39,6 +39,9 @@ DEFAULT_CONFIG = {
     "api_key": "",
     "endpoint": "https://api.deepseek.com/user/balance",
     "refresh_interval": 60,
+    # 默认直连：物理网络直连 DeepSeek 已验证通畅，全关代理也能用。
+    # 仅当 endpoint 是需代理才能访问的地址（如境外中转站）时才勾选走系统代理
+    "use_system_proxy": False,
 }
 
 # ─── 配色 ─────────────────────────────────────────
@@ -318,7 +321,11 @@ class BalanceWidget:
             self.fetch_error = "请先设置 API Key"
         else:
             try:
-                resp = requests.get(
+                session = requests.Session()
+                # 默认直连（物理网络直连 DeepSeek 已验证通畅，Clash 全关也能用）；
+                # 需要走代理时在设置里勾选"走系统代理"
+                session.trust_env = bool(self.cfg.get("use_system_proxy", False))
+                resp = session.get(
                     self.cfg["endpoint"],
                     headers={
                         "Authorization": f"Bearer {self.cfg['api_key']}",
@@ -340,9 +347,25 @@ class BalanceWidget:
                     self.fetch_error = f"HTTP {resp.status_code}"
             except Exception as e:
                 self.balance_data = None
-                self.fetch_error = str(e)
+                self.fetch_error = self._friendly_error(e)
 
         self.root.after(0, self._update_ui)
+
+    @staticmethod
+    def _friendly_error(e):
+        """把常见网络异常翻译成悬浮窗能放下的短提示"""
+        if isinstance(e, requests.exceptions.ProxyError):
+            return "代理连接失败"
+        if isinstance(e, requests.exceptions.ConnectTimeout):
+            return "连接超时"
+        if isinstance(e, requests.exceptions.ReadTimeout):
+            return "响应超时"
+        if isinstance(e, requests.exceptions.SSLError):
+            return "SSL 证书错误"
+        if isinstance(e, requests.exceptions.ConnectionError):
+            return "无法连接服务器"
+        text = str(e)
+        return text[:14] + "…" if len(text) > 16 else text
 
     def _update_ui(self):
         self._fetching = False
@@ -380,7 +403,7 @@ class BalanceWidget:
     def settings_dialog(self):
         dialog = tk.Toplevel(self.root)
         dialog.title("设置")
-        dialog.geometry("420x275")
+        dialog.geometry("420x300")
         dialog.resizable(False, False)
         dialog.configure(bg=BG)
         dialog.attributes("-topmost", True)
@@ -436,9 +459,17 @@ class BalanceWidget:
         int_entry.place(x=16, y=190)
         _add_entry_menu(int_entry)
 
+        # 走系统代理（默认不勾选，直连即可；仅 endpoint 需代理访问时才勾选）
+        proxy_var = tk.BooleanVar(value=bool(self.cfg.get("use_system_proxy", False)))
+        tk.Checkbutton(dialog, text="走系统代理（仅中转站需要）", variable=proxy_var,
+                       bg=BG, fg=FG_MUTED, selectcolor="#1F2937",
+                       activebackground=BG, activeforeground=FG,
+                       font=("Segoe UI", 8)).place(x=16, y=214)
+
         def save():
             self.cfg["api_key"] = key_var.get()
             self.cfg["endpoint"] = ep_var.get()
+            self.cfg["use_system_proxy"] = proxy_var.get()
             try:
                 self.cfg["refresh_interval"] = int(interval_var.get())
             except ValueError:
