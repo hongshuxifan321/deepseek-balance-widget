@@ -83,11 +83,12 @@ class WhaleSpinner:
     RING_R = 20
     ARC_W = 3.0         # 弧线粗度
 
-    def __init__(self, canvas, cx, cy, whale_img, on_click):
+    def __init__(self, canvas, cx, cy, whale_img, on_click, offset=(0, 0)):
         self.canvas = canvas
         self.cx = cx
         self.cy = cy
         self.whale_img = whale_img
+        self.offset = offset  # 图像中心到质心的偏移，让鲸鱼质心对准环心
         self.on_click = on_click
         self.angle = 0.0
         self.velocity = 0.0
@@ -146,8 +147,10 @@ class WhaleSpinner:
     def _draw(self):
         self.canvas.delete("all")
 
-        # 鲸鱼图标
-        self.canvas.create_image(self.cx + 1, self.cy, image=self.whale_img, anchor="center")
+        # 鲸鱼图标（质心对准环心，物理居中）
+        self.canvas.create_image(
+            self.cx + self.offset[0], self.cy + self.offset[1],
+            image=self.whale_img, anchor="center")
 
         # 旋转弧线段
         step_deg = 360 / self.N_SEG
@@ -195,10 +198,23 @@ class BalanceWidget:
         inner.place(x=1, y=1)
         inner.pack_propagate(False)
 
-        # 鲸鱼图片（必须在 Tk() 之后加载）
+        # 鲸鱼图片（必须在 Tk() 之后加载）；同时计算像素质心，
+        # 让鲸鱼在旋转环中物理居中（替代视觉微调）
         self._whale_tk = None
+        self._whale_offset = (0, 0)
         if os.path.exists(WHALE_PNG):
-            self._whale_tk = ImageTk.PhotoImage(Image.open(WHALE_PNG))
+            img = Image.open(WHALE_PNG)
+            self._whale_tk = ImageTk.PhotoImage(img)
+            w, h = img.size
+            pa = img.load()
+            sx = sy = wsum = 0.0
+            for y in range(h):
+                for x in range(w):
+                    a = pa[x, y][3]
+                    sx += x * a
+                    sy += y * a
+                    wsum += a
+            self._whale_offset = (w / 2 - sx / wsum, h / 2 - sy / wsum)
 
         # ─── 内容区（整体左右+上下居中） ──────────
         content = tk.Frame(inner, bg=BG)
@@ -216,6 +232,7 @@ class BalanceWidget:
             cx=spinner_size // 2, cy=spinner_size // 2,
             whale_img=self._whale_tk,
             on_click=self.refresh,
+            offset=self._whale_offset,
         )
 
         # 文字区
