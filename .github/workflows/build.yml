@@ -33,7 +33,7 @@ jobs:
         if: runner.os == 'macOS'
         shell: bash
         run: |
-          pyinstaller --onefile --name "DeepSeek_API_Balance" --add-data ".deepseek_whale.png:." DeepSeek_API余额.py
+          pyinstaller --onefile --name "DeepSeek_API_Balance" --icon "icon.icns" --add-data ".deepseek_whale.png:." DeepSeek_API余额.py
           cp "dist/DeepSeek_API_Balance" "dist/DeepSeek_API_Balance-macOS"
 
       - name: Build (Linux)
@@ -42,6 +42,10 @@ jobs:
         run: |
           pyinstaller --onefile --windowed --name "DeepSeek_API_Balance" --add-data ".deepseek_whale.png:." DeepSeek_API余额.py
           cp "dist/DeepSeek_API_Balance" "dist/DeepSeek_API_Balance-Linux"
+          # Linux 无内嵌图标机制, 生成图标包(.desktop + PNG + 安装说明)
+          python -c "from PIL import Image; Image.open('icon.ico').save('dist/icon-256.png', 'PNG')"
+          cp "DeepSeek_API_Balance.desktop" "INSTALL_LINUX.md" dist/
+          tar -czf "dist/DeepSeek_API_Balance-Linux-icons.tar.gz" -C dist icon-256.png DeepSeek_API_Balance.desktop INSTALL_LINUX.md
 
       - name: Upload to Release
         uses: softprops/action-gh-release@v2

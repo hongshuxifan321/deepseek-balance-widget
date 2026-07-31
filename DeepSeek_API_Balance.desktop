@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=DeepSeek API Balance
+Comment=DeepSeek API 余额悬浮窗
+Exec=/home/USERNAME/DeepSeek_API_Balance/DeepSeek_API_Balance
+Icon=deepseek-balance
+Terminal=false
+Categories=Utility;
