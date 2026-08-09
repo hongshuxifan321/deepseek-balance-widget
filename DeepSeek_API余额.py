@@ -17,10 +17,8 @@ import queue
 import subprocess
 import sys
 import threading
-import time
 import tkinter as tk
 import webbrowser
-from tkinter import messagebox
 
 import requests
 from PIL import Image, ImageTk
