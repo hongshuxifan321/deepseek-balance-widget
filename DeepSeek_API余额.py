@@ -391,13 +391,19 @@ class BalanceWidget:
                 )
                 if resp.status_code == 200:
                     data = resp.json()
-                    info = data.get("balance_infos", [{}])[0] if data.get("balance_infos") else {}
-                    result = ({
-                        "total": float(info.get("total_balance", 0)),
-                        "topup": float(info.get("topped_up_balance", 0)),
-                        "granted": float(info.get("granted_balance", 0)),
-                        "currency": info.get("currency", "CNY"),
-                    }, None)
+                    infos = data.get("balance_infos")
+                    info = infos[0] if isinstance(infos, list) and infos else None
+                    if info is None or not isinstance(info, dict) \
+                            or "total_balance" not in info:
+                        # 格式非 DeepSeek 官方约定: 显式报错, 不静默显示 ¥0.00
+                        result = (None, "余额格式异常")
+                    else:
+                        result = ({
+                            "total": float(info.get("total_balance", 0)),
+                            "topup": float(info.get("topped_up_balance", 0)),
+                            "granted": float(info.get("granted_balance", 0)),
+                            "currency": info.get("currency", "CNY"),
+                        }, None)
                 else:
                     result = (None, f"HTTP {resp.status_code}")
             except Exception as e:
