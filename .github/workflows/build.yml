@@ -26,7 +26,9 @@ jobs:
         if: runner.os == 'Windows'
         shell: bash
         run: |
-          pyinstaller --onefile --windowed --name "DeepSeek_API_Balance" --icon "icon.ico" --add-data ".deepseek_whale.png;." --collect-all certifi DeepSeek_API余额.py
+          # --manifest dpi_unaware.manifest: 不做 DPI 感知, 150% 缩放下窗口按系统缩放拉伸
+          # (与本地 spec 一致; 缺失会让 Tk 按物理像素布局, 窗口缩成 2/3, 文字被裁)
+          pyinstaller --onefile --windowed --name "DeepSeek_API_Balance" --icon "icon.ico" --manifest "dpi_unaware.manifest" --add-data ".deepseek_whale.png;." --collect-all certifi DeepSeek_API余额.py
           cp "dist/DeepSeek_API_Balance.exe" "dist/DeepSeek_API_Balance-Windows.exe"
 
       - name: Build (macOS)
