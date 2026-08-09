@@ -564,19 +564,10 @@ def _ensure_single_instance():
         return True
 
 
-def _enable_dpi_awareness():
-    """Windows 高 DPI: 125%/150% 缩放下文字不发虚(必须在 Tk 创建前调用)。"""
-    if sys.platform != "win32":
-        return
-    try:
-        import ctypes
-        ctypes.windll.shcore.SetProcessDpiAwareness(1)
-    except Exception:
-        pass
-
-
 if __name__ == "__main__":
-    _enable_dpi_awareness()
+    # 注意: 不要加 SetProcessDpiAwareness。本机 150% 缩放下 DPI 感知会让
+    # Tk 按物理像素布局, 152x62 窗口缩成 101x41, 文字被裁(2026-08-09 实测)。
+    # 不做 DPI 感知时 Windows 按缩放拉伸窗口, 尺寸正常。
     if not _ensure_single_instance():
         sys.exit(0)
     widget = BalanceWidget()
