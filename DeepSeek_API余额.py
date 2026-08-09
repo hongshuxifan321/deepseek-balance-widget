@@ -2,17 +2,18 @@
 DeepSeek API 余额悬浮窗
 - DeepSeek 蓝色主题 + 鲸鱼图标 + 旋转弧线环
 - 点击鲸鱼 = 立即刷新 + 旋转动画
-- 5 分钟自动刷新
+- 默认 60 秒自动刷新（可在设置中调整）
 - 右键菜单：API开放平台 / 设置 / 退出
 - 支持 DeepSeek 官方 + 自定义中转站
 - 配置存储在 ~/.deepseek_balance_widget.json
 
-产出: deepseek_balance_widget.py
+产出: DeepSeek_API余额.py
 """
 
 import json
 import math
 import os
+import queue
 import subprocess
 import sys
 import threading
@@ -44,6 +45,9 @@ DEFAULT_CONFIG = {
     "use_system_proxy": False,
 }
 
+# 货币符号映射: API 返回的 currency 字段 → 显示符号; 未知货币只显示数字
+CURRENCY_SYMBOL = {"CNY": "¥", "USD": "$", "EUR": "€", "GBP": "£", "JPY": "¥"}
+
 # ─── 配色 ─────────────────────────────────────────
 DS_BLUE = "#4D6BFE"
 DS_BLUE_DIM = "#3A54D4"
@@ -55,17 +59,31 @@ FG_MUTED = "#9CA3AF"
 
 def load_config():
     if os.path.exists(CONFIG_PATH):
-        with open(CONFIG_PATH, "r", encoding="utf-8") as f:
-            cfg = json.load(f)
+        try:
+            with open(CONFIG_PATH, "r", encoding="utf-8") as f:
+                cfg = json.load(f)
             for k, v in DEFAULT_CONFIG.items():
                 cfg.setdefault(k, v)
             return cfg
+        except Exception:
+            # 配置损坏(写入中断/手改坏): 备份后回退默认, 不让悬浮窗启动崩溃
+            try:
+                os.replace(CONFIG_PATH, CONFIG_PATH + ".corrupt")
+            except OSError:
+                pass
     return dict(DEFAULT_CONFIG)
 
 
 def save_config(cfg):
-    with open(CONFIG_PATH, "w", encoding="utf-8") as f:
+    # 原子写: 先写临时文件再替换, 中途断电不会留下半截配置
+    tmp = CONFIG_PATH + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
         json.dump(cfg, f, indent=2, ensure_ascii=False)
+    try:
+        os.chmod(tmp, 0o600)  # POSIX: 仅本人可读写, API key 不对其他用户可见
+    except OSError:
+        pass
+    os.replace(tmp, CONFIG_PATH)
 
 
 def _dim_color(hex_color, factor):
@@ -147,10 +165,11 @@ class WhaleSpinner:
     def _draw(self):
         self.canvas.delete("all")
 
-        # 鲸鱼图标（质心对准环心，物理居中）
-        self.canvas.create_image(
-            self.cx + self.offset[0], self.cy + self.offset[1],
-            image=self.whale_img, anchor="center")
+        # 鲸鱼图标（质心对准环心，物理居中）；加载失败时降级为纯旋转环
+        if self.whale_img is not None:
+            self.canvas.create_image(
+                self.cx + self.offset[0], self.cy + self.offset[1],
+                image=self.whale_img, anchor="center")
 
         # 旋转弧线段
         step_deg = 360 / self.N_SEG
@@ -181,6 +200,9 @@ class BalanceWidget:
         self.balance_data = None
         self.fetch_error = None
         self._fetching = False
+        # 工作线程 → 主线程的结果通道。Tk 非线程安全,
+        # 工作线程绝不直接调 root.after, 只 put 队列, 主线程 after 轮询
+        self._result_queue = queue.Queue()
 
         self.root = tk.Tk()
         self.root.title("DeepSeek 余额")
@@ -203,18 +225,23 @@ class BalanceWidget:
         self._whale_tk = None
         self._whale_offset = (0, 0)
         if os.path.exists(WHALE_PNG):
-            img = Image.open(WHALE_PNG)
-            self._whale_tk = ImageTk.PhotoImage(img)
-            w, h = img.size
-            pa = img.load()
-            sx = sy = wsum = 0.0
-            for y in range(h):
-                for x in range(w):
-                    a = pa[x, y][3]
-                    sx += x * a
-                    sy += y * a
-                    wsum += a
-            self._whale_offset = (w / 2 - sx / wsum, h / 2 - sy / wsum)
+            try:
+                # 转 RGBA: 无 alpha 的 RGB 图 pa[x,y][3] 会 IndexError 启动崩溃
+                img = Image.open(WHALE_PNG).convert("RGBA")
+                self._whale_tk = ImageTk.PhotoImage(img)
+                w, h = img.size
+                pa = img.load()
+                sx = sy = wsum = 0.0
+                for y in range(h):
+                    for x in range(w):
+                        a = pa[x, y][3]
+                        sx += x * a
+                        sy += y * a
+                        wsum += a
+                if wsum > 0:
+                    self._whale_offset = (w / 2 - sx / wsum, h / 2 - sy / wsum)
+            except Exception:
+                self._whale_tk = None  # 图标损坏时降级: 只显示旋转环, 不崩溃
 
         # ─── 内容区（整体左右+上下居中） ──────────
         content = tk.Frame(inner, bg=BG)
@@ -331,11 +358,23 @@ class BalanceWidget:
         self.spin.auto_spin = True
         self.spin._ensure_loop()
         threading.Thread(target=self._fetch, daemon=True).start()
+        self._poll_result()
+
+    def _poll_result(self):
+        """主线程轮询结果队列——工作线程不得直接调 Tk。"""
+        try:
+            balance_data, fetch_error = self._result_queue.get_nowait()
+        except queue.Empty:
+            if self._fetching:
+                self.root.after(50, self._poll_result)
+            return
+        self.balance_data = balance_data
+        self.fetch_error = fetch_error
+        self._update_ui()
 
     def _fetch(self):
         if not self.cfg["api_key"]:
-            self.balance_data = None
-            self.fetch_error = "请先设置 API Key"
+            result = (None, "请先设置 API Key")
         else:
             try:
                 session = requests.Session()
@@ -353,20 +392,18 @@ class BalanceWidget:
                 if resp.status_code == 200:
                     data = resp.json()
                     info = data.get("balance_infos", [{}])[0] if data.get("balance_infos") else {}
-                    self.balance_data = {
+                    result = ({
                         "total": float(info.get("total_balance", 0)),
                         "topup": float(info.get("topped_up_balance", 0)),
                         "granted": float(info.get("granted_balance", 0)),
-                    }
-                    self.fetch_error = None
+                        "currency": info.get("currency", "CNY"),
+                    }, None)
                 else:
-                    self.balance_data = None
-                    self.fetch_error = f"HTTP {resp.status_code}"
+                    result = (None, f"HTTP {resp.status_code}")
             except Exception as e:
-                self.balance_data = None
-                self.fetch_error = self._friendly_error(e)
+                result = (None, self._friendly_error(e))
 
-        self.root.after(0, self._update_ui)
+        self._result_queue.put(result)
 
     @staticmethod
     def _friendly_error(e):
@@ -390,7 +427,8 @@ class BalanceWidget:
 
         if self.balance_data:
             total = self.balance_data["total"]
-            self.text_canvas.itemconfig(self._text_bal, text=f"¥{total:.2f}", fill=FG)
+            symbol = CURRENCY_SYMBOL.get(self.balance_data.get("currency", "CNY"), "")
+            self.text_canvas.itemconfig(self._text_bal, text=f"{symbol}{total:.2f}", fill=FG)
             self.text_canvas.itemconfig(self._text_name, text="DeepSeek", fill=DS_BLUE)
         else:
             self.text_canvas.itemconfig(self._text_bal, text="---", fill=FG_MUTED)
@@ -487,10 +525,12 @@ class BalanceWidget:
             self.cfg["api_key"] = key_var.get()
             self.cfg["endpoint"] = ep_var.get()
             self.cfg["use_system_proxy"] = proxy_var.get()
+            # 间隔钳制到 [10, 86400]: 填 0/负数会让 after(0) 事件循环自旋, 打爆 API
             try:
-                self.cfg["refresh_interval"] = int(interval_var.get())
+                val = int(interval_var.get())
             except ValueError:
-                pass
+                val = DEFAULT_CONFIG["refresh_interval"]
+            self.cfg["refresh_interval"] = max(10, min(val, 86400))
             save_config(self.cfg)
             dialog.destroy()
             self.refresh()
@@ -512,6 +552,32 @@ class BalanceWidget:
         self.root.mainloop()
 
 
+def _ensure_single_instance():
+    """Windows 互斥量: 已有一个实例运行时, 重复启动直接退出。"""
+    if sys.platform != "win32":
+        return True
+    try:
+        import ctypes
+        mutex = ctypes.windll.kernel32.CreateMutexW(None, False, "DeepSeek_Balance_Widget_Singleton")
+        return ctypes.windll.kernel32.GetLastError() == 0  # ERROR_ALREADY_EXISTS 时返回 False
+    except Exception:
+        return True
+
+
+def _enable_dpi_awareness():
+    """Windows 高 DPI: 125%/150% 缩放下文字不发虚(必须在 Tk 创建前调用)。"""
+    if sys.platform != "win32":
+        return
+    try:
+        import ctypes
+        ctypes.windll.shcore.SetProcessDpiAwareness(1)
+    except Exception:
+        pass
+
+
 if __name__ == "__main__":
+    _enable_dpi_awareness()
+    if not _ensure_single_instance():
+        sys.exit(0)
     widget = BalanceWidget()
     widget.run()
