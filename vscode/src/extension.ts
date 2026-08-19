@@ -165,6 +165,11 @@ function openCard(context: vscode.ExtensionContext) {
 
   panel.webview.onDidReceiveMessage((msg) => {
     switch (msg.type) {
+      case 'ready':
+        // webview JS 加载完成后推送缓存并刷新（避免消息早于 JS 就绪而丢失）
+        postToCard({ type: 'update', balance: lastBalance, error: lastError });
+        refresh(context);
+        break;
       case 'refresh':
         refresh(context);
         break;
@@ -180,9 +185,7 @@ function openCard(context: vscode.ExtensionContext) {
     panel = undefined;
   });
 
-  // 打开即推送缓存数据并刷新一次
-  postToCard({ type: 'update', balance: lastBalance, error: lastError });
-  refresh(context);
+  // 缓存与刷新改由 webview 就绪后（ready 消息）推送，防止消息早于 JS 加载而丢失
 }
 
 function postToCard(msg: unknown) {

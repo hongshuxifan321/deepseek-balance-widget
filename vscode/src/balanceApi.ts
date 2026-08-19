@@ -19,13 +19,23 @@ export function friendlyError(err: unknown): string {
   const e = err as { name?: string; cause?: unknown; message?: string };
   const name = e?.name ?? '';
   const msg = e?.message ?? '';
+  // undici 把代理/连接错误包装在 TypeError("fetch failed") 里，真实类型在 cause 链
+  const causeMsg = causeMessage(e?.cause);
   if (name === 'ProxyError' || name === 'ProxyAuthenticationError') return '代理连接失败';
+  if (/proxy/i.test(msg + causeMsg)) return '代理连接失败';
   if (name === 'ConnectTimeoutError') return '连接超时';
   if (name === 'TimeoutError' || name === 'AbortError') return '请求超时';
   if (name === 'TypeError' && msg.includes('fetch failed')) return '无法连接服务器';
-  if (/certificate|SSL/i.test(msg)) return 'SSL 证书错误';
+  if (/certificate|SSL/i.test(msg + causeMsg)) return 'SSL 证书错误';
   if (msg.length > 14) return msg.slice(0, 14) + '…';
   return msg || '未知错误';
+}
+
+/** 递归收集 cause 链的错误信息（undici 嵌套包装） */
+function causeMessage(cause: unknown, depth = 0): string {
+  if (!cause || depth > 3) return '';
+  const c = cause as { name?: string; message?: string; cause?: unknown };
+  return `${c.name ?? ''} ${c.message ?? ''} ${causeMessage(c.cause, depth + 1)}`.trim();
 }
 
 /**

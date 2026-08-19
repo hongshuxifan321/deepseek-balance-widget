@@ -3,7 +3,7 @@ name: Build VSIX
 on:
   push:
     tags:
-      - 'v*'
+      - 'v[2-9]*'
 
 jobs:
   build:

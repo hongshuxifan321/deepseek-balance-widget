@@ -175,4 +175,6 @@
   });
 
   buildRing();
+  // 通知扩展 webview 已就绪，由扩展推送缓存并刷新（防消息丢失）
+  vscode.postMessage({ type: 'ready' });
 })();

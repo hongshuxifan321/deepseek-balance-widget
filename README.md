@@ -16,7 +16,7 @@ VSCode 状态栏常显 DeepSeek API 余额，点击打开旋转弧线环余额�
 ## 安装
 
 ```bash
-code --install-extension deepseek-balance-widget-1.0.0.vsix
+code --install-extension deepseek-balance-widget-2.0.1.vsix
 ```
 
 或 VSCode 扩展面板 → `...` → 从 VSIX 安装。
