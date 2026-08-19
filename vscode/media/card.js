@@ -71,11 +71,23 @@
 
   // ─── 交互 ───
   const card = document.getElementById('card');
+  let spinStopTimer = null;
   const nameEl = document.getElementById('name');
   const balEl = document.getElementById('balance');
 
   function toggleSpin(on) {
-    card.classList.toggle('spin-on', on);
+    if (on) {
+      // 立即旋转；若有未完成的停转定时器则重置
+      if (spinStopTimer) { clearTimeout(spinStopTimer); spinStopTimer = null; }
+      card.classList.add('spin-on');
+    } else {
+      // 数据回来不立即停，转满一整圈再停（对齐桌面版惯性衰减观感），
+      // 否则请求太快时动画同一帧被移除，浏览器不会渲染转动
+      if (!spinStopTimer) spinStopTimer = setTimeout(() => {
+        card.classList.remove('spin-on');
+        spinStopTimer = null;
+      }, 2400);
+    }
   }
 
   function requestRefresh() {
