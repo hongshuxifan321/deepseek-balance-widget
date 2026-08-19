@@ -1,46 +1,64 @@
-# DeepSeek API 余额悬浮窗
+# DeepSeek API 余额（VSCode 插件）
 
-> 等 DeepSeek 回复时点鲸鱼转圈玩，顺便看一眼余额——不用切到官网，不用开 ccswitch。
+VSCode 状态栏常显 DeepSeek API 余额，点击打开旋转弧线环余额卡片。
 
-桌面悬浮小工具，屏幕角落常驻。点击鲸鱼图标查询余额，顺带转圈解压。
-
-## 为什么做这个
-
-- 等 AI 回复的那几秒手闲，点鲸鱼转圈打发时间
-- 查余额要打开官网 / ccswitch 再切回来，烦
-- 悬浮窗往角落一放，扫一眼就知道还剩多少钱
+> 原 tkinter 桌面悬浮窗（exe）已于 2026-08-20 退役，由本插件取代。历史版本见 git 历史与 GitHub Release。
 
 ## 功能
 
-- 🐋 DeepSeek 品牌蓝 + 鲸鱼图标 + 旋转弧线环
-- 💰 实时显示 API 余额，每 60 秒自动刷新
-- 🖱️ 点击鲸鱼 = 手动刷新 + 解压转圈
-- 📋 右键菜单：API 开放平台 / 设置 / 退出
-- 🔑 支持 DeepSeek 官方 API 和自定义中转站（如 ccswitch）
-- 💾 配置保存在本地 `~/.deepseek_balance_widget.json`，不上传
+- 状态栏常显余额（左下角），悬停显示充值/赠送明细
+- 点击状态栏打开余额卡片：旋转弧线环 + 鲸鱼图标 + 余额（复刻原悬浮窗视觉）
+- 点击鲸鱼 = 立即刷新 + 惯性旋转动画（点击加速、摩擦衰减、连击加成）
+- 默认 60 秒自动刷新
+- 支持自定义 endpoint（中转站）与系统代理
+- API key 存 VSCode secretStorage（系统加密，不落明文文件）
 
-## 下载
-
-直接下载，免安装、免 Python：
-
-👉 **[下载最新版](../../releases/latest)**
-
-支持 Windows / macOS / Linux 三平台。
-
-## 从源码运行
+## 安装
 
 ```bash
-pip install -r requirements.txt
-pythonw DeepSeek_API余额.py
+code --install-extension deepseek-balance-widget-1.0.0.vsix
 ```
 
-首次运行右键 → 设置 → 填入你的 [DeepSeek API Key](https://platform.deepseek.com/api_keys)。
+或 VSCode 扩展面板 → `...` → 从 VSIX 安装。
 
-## 自行打包
+## 使用
+
+1. 命令面板（Ctrl+Shift+P）→「DeepSeek 余额：设置 API Key」，输入 `sk-...`
+2. 状态栏左下角显示 `¥余额`，点击打开余额卡片
+
+## 配置（设置 → 搜索 `deepseekBalance`）
+
+| 配置项 | 默认 | 说明 |
+|---|---|---|
+| `deepseekBalance.endpoint` | `https://api.deepseek.com/user/balance` | 余额查询地址（中转站改这里） |
+| `deepseekBalance.refreshInterval` | `60` | 自动刷新间隔（秒，10-86400） |
+| `deepseekBalance.useSystemProxy` | `false` | 走系统代理（仅当 endpoint 需代理访问时勾选） |
+
+## 命令
+
+| 命令 | 说明 |
+|---|---|
+| DeepSeek 余额：设置 API Key | 输入/更新 API key（secretStorage） |
+| DeepSeek 余额：清除 API Key | 删除已存 key |
+| DeepSeek 余额：立即刷新 | 手动刷新余额 |
+| DeepSeek 余额：打开 API 开放平台 | 浏览器打开 `platform.deepseek.com/usage` |
+| DeepSeek 余额：打开/关闭余额卡片 | 开关旋转环卡片 |
+
+## 从源码构建
 
 ```bash
-pip install pyinstaller
-pyinstaller --onefile --windowed --name "DeepSeek_API_Balance" --add-data ".deepseek_whale.png;." --collect-all certifi DeepSeek_API余额.py
+cd vscode
+npm install
+npm run compile            # tsc
+npx @vscode/vsce package   # 生成 .vsix
 ```
 
-> macOS/Linux 用户将 `;` 改为 `:`。
+## 安全
+
+- API key 只存 VSCode secretStorage（Windows 凭据保护加密），不上传、不写日志
+- 插件无遥测、无任何第三方请求，仅向配置的 endpoint 发起余额查询
+- 鲸鱼图标为 DeepSeek 商标，仅用于功能展示
+
+## License
+
+MIT
