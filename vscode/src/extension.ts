@@ -153,7 +153,7 @@ function openCard(context: vscode.ExtensionContext) {
   panel = vscode.window.createWebviewPanel(
     'deepseekBalanceCard',
     CARD_TITLE,
-    vscode.ViewColumn.Beside,
+    vscode.ViewColumn.One,
     {
       enableScripts: true,
       retainContextWhenHidden: true,

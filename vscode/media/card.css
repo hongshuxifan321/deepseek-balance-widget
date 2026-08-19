@@ -31,14 +31,13 @@ body {
 #ring {
   position: absolute;
   inset: 0;
+  z-index: 1;
 }
 
 #avatar {
   position: absolute;
   inset: 0;
   margin: auto;
-  max-width: 40px;
-  max-height: 40px;
 }
 
 .spin-on #ring {
