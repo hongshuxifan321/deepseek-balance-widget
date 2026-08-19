@@ -1,0 +1,98 @@
+/* DeepSeek 余额卡片 — 复刻桌面悬浮窗（深色卡片 #111827 + 1px 主题色边框） */
+body {
+  margin: 0;
+  padding: 8px;
+  background: transparent;
+}
+
+#card {
+  background: #111827;
+  border: 1px solid #3a54d4;
+  border-radius: 8px;
+  padding: 8px 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: fit-content;
+  max-width: 340px;
+  font-family: "Segoe UI", system-ui, sans-serif;
+  user-select: none;
+}
+
+/* ─── 旋转环 + 内部图标 ─── */
+#spinner {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  flex: none;
+  cursor: pointer;
+}
+
+#ring {
+  position: absolute;
+  inset: 0;
+}
+
+#avatar {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  max-width: 40px;
+  max-height: 40px;
+}
+
+.spin-on #ring {
+  animation: ring-spin 2.4s linear infinite;
+}
+
+@keyframes ring-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ─── 文字区 ─── */
+#text {
+  min-width: 84px;
+  text-align: left;
+}
+
+#name {
+  color: #4d6bfe;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+#balance {
+  color: #e5e7eb;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+/* ─── 操作按钮（对应桌面版右键菜单） ─── */
+#actions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-left: auto;
+}
+
+#actions button {
+  background: #1f2937;
+  color: #9ca3af;
+  border: none;
+  border-radius: 4px;
+  font-size: 10px;
+  padding: 2px 8px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+#actions button:hover {
+  background: #374151;
+  color: #e5e7eb;
+}

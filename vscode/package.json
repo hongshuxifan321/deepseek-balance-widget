@@ -1,0 +1,81 @@
+{
+  "name": "deepseek-balance-widget",
+  "displayName": "DeepSeek API 余额",
+  "description": "DeepSeek API 余额：状态栏常显 + 旋转环余额卡片（复刻桌面悬浮窗）",
+  "version": "1.0.0",
+  "publisher": "local",
+  "license": "MIT",
+  "icon": "media/whale.png",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "deepseekBalance.toggleCard",
+        "title": "DeepSeek 余额：打开/关闭余额卡片",
+        "icon": "$(sync)"
+      },
+      {
+        "command": "deepseekBalance.refresh",
+        "title": "DeepSeek 余额：立即刷新"
+      },
+      {
+        "command": "deepseekBalance.setApiKey",
+        "title": "DeepSeek 余额：设置 API Key"
+      },
+      {
+        "command": "deepseekBalance.clearApiKey",
+        "title": "DeepSeek 余额：清除 API Key"
+      },
+      {
+        "command": "deepseekBalance.openPlatform",
+        "title": "DeepSeek 余额：打开 API 开放平台"
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        { "command": "deepseekBalance.toggleCard", "when": "false" }
+      ]
+    },
+    "configuration": {
+      "title": "DeepSeek 余额",
+      "properties": {
+        "deepseekBalance.endpoint": {
+          "type": "string",
+          "default": "https://api.deepseek.com/user/balance",
+          "description": "余额查询地址（支持自定义中转站）"
+        },
+        "deepseekBalance.refreshInterval": {
+          "type": "number",
+          "default": 60,
+          "minimum": 10,
+          "maximum": 86400,
+          "description": "自动刷新间隔（秒），取值 10-86400"
+        },
+        "deepseekBalance.useSystemProxy": {
+          "type": "boolean",
+          "default": false,
+          "description": "走系统代理（仅当 endpoint 是需代理访问的中转站时勾选，默认直连）"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "package": "npm run compile && vsce package"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/vscode": "^1.90.0",
+    "typescript": "^5.5.0",
+    "@vscode/vsce": "^3.0.0"
+  },
+  "dependencies": {
+    "undici": "^6.19.0"
+  }
+}
