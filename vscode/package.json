@@ -2,7 +2,7 @@
   "name": "deepseek-balance-widget",
   "displayName": "DeepSeek API 余额",
   "description": "DeepSeek API 余额：状态栏常显 + 旋转环余额卡片（复刻桌面悬浮窗）",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "publisher": "local",
   "license": "MIT",
   "icon": "media/whale.png",

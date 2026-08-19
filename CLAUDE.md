@@ -31,5 +31,5 @@ GitHub 公开仓库：`hongshuxifan321/deepseek-balance-widget`。
 - **激活事件**：package.json 必须有 `activationEvents: ["onStartupFinished"]`——否则重启 VSCode 后扩展不激活、状态栏不出现（contributes.commands 只按需激活）
 - **webview 消息时序**：卡片 JS 加载完成后发 `ready`，扩展收到再推缓存并刷新——直接 postMessage 会早于 JS 就绪而丢失
 - **旋转环**：复刻桌面版 WhaleSpinner 惯性模型（FRICTION 0.982、AUTO_V 0.06、CLICK_V 0.15、连击 8 次封顶），用 rAF 驱动，别改回匀速 CSS 动画
-- **错误翻译**：undici 把代理/连接错误包装在 TypeError("fetch failed") 的 cause 链里，用 causeMessage 递归收集后匹配，不要用宽泛的 /proxy/i（会误伤域名含 proxy 的 endpoint）
+- **错误翻译**：代理失败识别**靠上下文**（fetchBalance 知道是否用了代理，走了代理且失败 → 抛"代理连接失败"），不靠错误字符串特征——undici 错误链里没有 proxy 字样（实测只有 ECONNREFUSED）。friendlyError 用 causeMessage 递归收集 cause 链匹配特定特征（ProxyError 等），勿用宽泛 /proxy/i（误伤域名含 proxy 的 endpoint）
 - **刷新间隔**：restartTimer 必须对非数字 interval 防御（手改 settings.json 可能写字符串 → NaN → 1ms 高频打 API），钳制 [10, 86400]

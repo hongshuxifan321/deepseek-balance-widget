@@ -56,12 +56,24 @@ export async function fetchBalance(
     },
     signal: AbortSignal.timeout(10_000),
   };
+  let usingProxy = false;
   if (useSystemProxy) {
     const proxy = vscode.workspace.getConfiguration('http').get<string>('proxy');
-    if (proxy) opts.dispatcher = new ProxyAgent(proxy);
+    if (proxy) {
+      opts.dispatcher = new ProxyAgent(proxy);
+      usingProxy = true;
+    }
   }
 
-  const resp = await fetch(endpoint, opts);
+  let resp: Response;
+  try {
+    resp = await fetch(endpoint, opts);
+  } catch (err) {
+    // 走了代理且失败：undici 错误链里不含代理信息（实测只有 ECONNREFUSED 等），
+    // 只能靠上下文判断是代理连接失败
+    if (usingProxy) throw new Error('代理连接失败');
+    throw err;
+  }
   if (resp.status !== 200) throw new Error(`HTTP ${resp.status}`);
 
   const data = (await resp.json()) as { balance_infos?: unknown };
