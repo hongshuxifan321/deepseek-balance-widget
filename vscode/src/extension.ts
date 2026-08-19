@@ -16,7 +16,7 @@ let fetching = false;
 
 export function activate(context: vscode.ExtensionContext) {
   // ─── 状态栏：常显余额，点击开关卡片 ───
-  statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
+  statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
   statusBar.command = 'deepseekBalance.toggleCard';
   context.subscriptions.push(statusBar);
   statusBar.show();

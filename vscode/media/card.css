@@ -40,15 +40,7 @@ body {
   margin: auto;
 }
 
-.spin-on #ring {
-  animation: ring-spin 2.4s linear infinite;
-}
 
-@keyframes ring-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
 
 /* ─── 文字区 ─── */
 #text {

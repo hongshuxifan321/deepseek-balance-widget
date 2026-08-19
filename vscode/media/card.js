@@ -1,4 +1,4 @@
-// DeepSeek 余额卡片 — 旋转弧线环 + 内部图标 + 余额（复刻桌面版 WhaleSpinner）
+// DeepSeek 余额卡片 — 旋转弧线环 + 内部图标 + 余额（复刻桌面版 WhaleSpinner 惯性旋转）
 (() => {
   const vscode = acquireVsCodeApi();
 
@@ -8,8 +8,9 @@
   const FG_MUTED = '#9CA3AF';
   const SYMBOLS = { CNY: '¥', USD: '$', EUR: '€', GBP: '£', JPY: '¥' };
 
-  // ─── 旋转弧线环：10 段弧、缺口 3 段、靠近缺口越暗（对齐桌面版 WhaleSpinner） ───
-  const RING_R = 20, ARC_W = 3, N_SEG = 10, GAP = 3, SEG_DEG = 20;
+  // ─── 旋转弧线环：10 段弧、缺口 3 段、靠近缺口渐暗（对齐桌面版 WhaleSpinner） ───
+  // 颜色下限 0.45、线宽 4.5：webview 抗锯齿渲染偏淡偏细，补偿后接近桌面版观感
+  const RING_R = 20, ARC_W = 4.5, N_SEG = 10, GAP = 3, SEG_DEG = 20;
 
   function dimColor(hex, factor) {
     const c = hex.replace('#', '');
@@ -27,18 +28,76 @@
     for (let i = 0; i < N_SEG; i++) {
       if (i < GAP) continue; // 缺口（与桌面版一致）
       const dist = Math.min(i, N_SEG - i - 1, Math.abs(i - GAP));
-      const color = dist <= 3 ? dimColor(DS_BLUE, 0.2 + 0.25 * dist) : DS_BLUE;
+      const factor = dist <= 3 ? 0.45 + 0.18 * dist : 1; // 0.45/0.63/0.81/0.99/全亮
       const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
       c.setAttribute('r', String(RING_R));
       c.setAttribute('cx', '22');
       c.setAttribute('cy', '22');
       c.setAttribute('fill', 'none');
-      c.setAttribute('stroke', color);
+      c.setAttribute('stroke', dimColor(DS_BLUE, factor));
       c.setAttribute('stroke-width', String(ARC_W));
       c.setAttribute('stroke-dasharray', `${dash} ${gapLen}`);
       c.setAttribute('transform', `rotate(${i * step} 22 22)`);
       svg.appendChild(c);
     }
+  }
+
+  // ─── 惯性旋转（复刻桌面版：点击加速 + 连击加成 + 摩擦衰减 + 刷新时自动转） ───
+  // 参数照搬桌面版 WhaleSpinner：FRICTION 0.982/帧(8ms)、AUTO_V 0.06 rad/帧 ≈ 1.2 圈/s、
+  // CLICK_V 0.15 rad/帧 ≈ 3 圈/s，连击 8 次封顶（mult 1+0.5*min(n-1,8)）
+  const ring = document.getElementById('ring');
+  const FRICTION = 0.982;
+  const MIN_V = 0.0003;
+  const AUTO_V = 0.06;
+  const CLICK_V = 0.15;
+  let angle = 0, velocity = 0, autoSpin = false;
+  let rafId = null, lastTs = 0;
+  let clickCount = 0, clickResetTimer = null;
+
+  function frame(ts) {
+    const dt = lastTs ? ts - lastTs : 8;
+    lastTs = ts;
+    const dt8 = dt / 8; // 归一化到桌面版 8ms 帧间隔
+    if (autoSpin) {
+      // 刷新中持续转；低于目标速度时拉回目标（对齐桌面版 auto_spin 逻辑）
+      if (velocity === 0) velocity = AUTO_V;
+      else if (Math.abs(velocity) < AUTO_V) velocity = velocity > 0 ? AUTO_V : -AUTO_V;
+    } else {
+      velocity *= Math.pow(FRICTION, dt8);
+    }
+    angle = (angle - velocity * dt8) % (2 * Math.PI);
+    ring.style.transform = `rotate(${angle * 57.29578}deg)`;
+    if (Math.abs(velocity) > MIN_V || autoSpin) {
+      rafId = requestAnimationFrame(frame);
+    } else {
+      velocity = 0;
+      rafId = null;
+      lastTs = 0;
+    }
+  }
+
+  function ensureSpin() {
+    if (rafId === null) {
+      lastTs = 0;
+      rafId = requestAnimationFrame(frame);
+    }
+  }
+
+  function kick() {
+    clickCount += 1;
+    const mult = 1 + 0.5 * Math.min(clickCount - 1, 8); // 连击加速，8 次封顶
+    velocity += CLICK_V * mult;
+    ensureSpin();
+    if (clickResetTimer) clearTimeout(clickResetTimer);
+    clickResetTimer = setTimeout(() => {
+      clickCount = 0;
+      clickResetTimer = null;
+    }, 1200);
+  }
+
+  function setAutoSpin(on) {
+    autoSpin = on;
+    if (on) ensureSpin();
   }
 
   // ─── 图标按 alpha 质心居中（对齐桌面版像素质心计算） ───
@@ -70,28 +129,11 @@
   });
 
   // ─── 交互 ───
-  const card = document.getElementById('card');
-  let spinStopTimer = null;
   const nameEl = document.getElementById('name');
   const balEl = document.getElementById('balance');
 
-  function toggleSpin(on) {
-    if (on) {
-      // 立即旋转；若有未完成的停转定时器则重置
-      if (spinStopTimer) { clearTimeout(spinStopTimer); spinStopTimer = null; }
-      card.classList.add('spin-on');
-    } else {
-      // 数据回来不立即停，转满一整圈再停（对齐桌面版惯性衰减观感），
-      // 否则请求太快时动画同一帧被移除，浏览器不会渲染转动
-      if (!spinStopTimer) spinStopTimer = setTimeout(() => {
-        card.classList.remove('spin-on');
-        spinStopTimer = null;
-      }, 2400);
-    }
-  }
-
   function requestRefresh() {
-    toggleSpin(true);
+    kick(); // 点击加速（惯性旋转），刷新结果回来时自动转由消息驱动
     vscode.postMessage({ type: 'refresh' });
   }
 
@@ -129,7 +171,7 @@
   window.addEventListener('message', (e) => {
     const msg = e.data;
     if (msg.type === 'update') render(msg.balance, msg.error);
-    else if (msg.type === 'spinning') toggleSpin(msg.on);
+    else if (msg.type === 'spinning') setAutoSpin(msg.on);
   });
 
   buildRing();
