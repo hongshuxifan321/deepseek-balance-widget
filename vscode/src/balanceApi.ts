@@ -22,7 +22,8 @@ export function friendlyError(err: unknown): string {
   // undici 把代理/连接错误包装在 TypeError("fetch failed") 里，真实类型在 cause 链
   const causeMsg = causeMessage(e?.cause);
   if (name === 'ProxyError' || name === 'ProxyAuthenticationError') return '代理连接失败';
-  if (/proxy/i.test(msg + causeMsg)) return '代理连接失败';
+  // 只认代理专用错误特征，不用宽泛 /proxy/i——endpoint 域名含 proxy 时 DNS 错误会误伤
+  if (/ProxyError|proxy response|proxy server/i.test(msg + causeMsg)) return '代理连接失败';
   if (name === 'ConnectTimeoutError') return '连接超时';
   if (name === 'TimeoutError' || name === 'AbortError') return '请求超时';
   if (name === 'TypeError' && msg.includes('fetch failed')) return '无法连接服务器';

@@ -109,11 +109,13 @@ async function refresh(context: vscode.ExtensionContext) {
 
 function restartTimer(context: vscode.ExtensionContext) {
   if (refreshTimer) clearInterval(refreshTimer);
-  const interval = vscode.workspace
+  const raw = vscode.workspace
     .getConfiguration(CONFIG_SECTION)
-    .get<number>('refreshInterval', 60);
-  // 钳制到 [10, 86400]，防止填 0/负数导致高频打爆 API
-  const ms = Math.max(10, Math.min(interval, 86400)) * 1000;
+    .get<unknown>('refreshInterval', 60);
+  const interval = Number(raw);
+  // 钳制到 [10, 86400]；非数字（手改 settings.json 写字符串）回退默认 60，
+  // 否则 NaN 会让 setInterval 按 1ms 高频打爆 API
+  const ms = (Number.isFinite(interval) ? Math.max(10, Math.min(interval, 86400)) : 60) * 1000;
   refreshTimer = setInterval(() => {
     if (!fetching) refresh(context);
   }, ms);
