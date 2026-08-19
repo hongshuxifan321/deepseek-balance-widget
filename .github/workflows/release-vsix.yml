@@ -1,0 +1,40 @@
+name: Build VSIX
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        working-directory: vscode
+        run: npm ci
+
+      - name: Compile
+        working-directory: vscode
+        run: npx tsc -p ./
+
+      - name: Package vsix
+        working-directory: vscode
+        run: npx @vscode/vsce package
+
+      - name: Create / update release and upload vsix
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            --title "$GITHUB_REF_NAME" --generate-notes \
+            --repo "${{ github.repository }}" || true
+          gh release upload "$GITHUB_REF_NAME" vscode/*.vsix \
+            --clobber --repo "${{ github.repository }}"
